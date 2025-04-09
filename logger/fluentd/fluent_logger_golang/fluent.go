@@ -643,7 +643,12 @@ func (f *Fluent) write(ctx context.Context, msg *msgToSend) (bool, error) {
 			f.conn.SetWriteDeadline(time.Time{})
 		}
 
+		// measure how much time it takes for fluent-logger-golang for each write
+		start := time.Now()
 		_, err = f.conn.Write(msg.data)
+		debug.SendEventsToLog("app",
+			fmt.Sprintf("Write attempt took %v", time.Since(start)),
+			debug.DEBUG, 0)
 		return err
 	}(); err != nil {
 		closer()
