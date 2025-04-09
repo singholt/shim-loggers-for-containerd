@@ -416,8 +416,16 @@ func (f *Fluent) appendBuffer(msg *msgToSend) error {
 	if f.closed {
 		return fmt.Errorf("fluent#appendBuffer: Logger already closed")
 	}
+
+	debug.SendEventsToLog("app",
+		fmt.Sprintf("Buffer length before append: %d/%d", len(f.pending), cap(f.pending)),
+		debug.DEBUG, 0)
+
 	select {
 	case f.pending <- msg:
+		debug.SendEventsToLog("app",
+			fmt.Sprintf("Buffer length after append: %d/%d", len(f.pending), cap(f.pending)),
+			debug.DEBUG, 0)
 	default:
 		return fmt.Errorf("fluent#appendBuffer: Buffer full, limit %v", f.Config.BufferLimit)
 	}
@@ -483,13 +491,22 @@ func (f *Fluent) connectWithRetry(ctx context.Context) error {
 		case <-timeout.C:
 			err := f.connect(ctx)
 			if err == nil {
+				debug.SendEventsToLog("app",
+					fmt.Sprint("Connected to fluent-bit successfully"),
+					debug.DEBUG, 0)
 				return nil
 			}
 
 			if _, ok := err.(*ErrUnknownNetwork); ok {
+				debug.SendEventsToLog("app",
+					fmt.Sprintf("Error connecting with ErrUnknownNetwork, err: %v", err),
+					debug.DEBUG, 0)
 				return err
 			}
 			if err == context.Canceled {
+				debug.SendEventsToLog("app",
+					fmt.Sprintf("Error connecting with context canceled, err: %v", err),
+					debug.DEBUG, 0)
 				return errIsClosing
 			}
 
@@ -499,11 +516,17 @@ func (f *Fluent) connectWithRetry(ctx context.Context) error {
 			}
 
 			timeout = time.NewTimer(time.Duration(waitTime) * time.Millisecond)
+			debug.SendEventsToLog("app",
+				fmt.Sprintf("Going to retry connecting to fluent-bit in %d ms", waitTime),
+				debug.DEBUG, 0)
 		case <-ctx.Done():
 			return errIsClosing
 		}
 	}
 
+	debug.SendEventsToLog("app",
+		fmt.Sprintf("Could not connect to fluentd after %d retries", f.Config.MaxRetry),
+		debug.DEBUG, 0)
 	return fmt.Errorf("could not connect to fluentd after %d retries", f.Config.MaxRetry)
 }
 
@@ -562,7 +585,16 @@ func (f *Fluent) writeWithRetry(ctx context.Context, msg *msgToSend) error {
 			fmt.Sprintf("Sending message to fluent-bit of length %d", len(msg.data)+len(msg.ack)),
 			debug.DEBUG, 0)
 		if retry, err := f.write(ctx, msg); !retry {
+			if err != nil {
+				debug.SendEventsToLog("app",
+					fmt.Sprintf("Unretrieable error during write to fluent-bit, err: %v", err),
+					debug.DEBUG, 0)
+			}
 			return err
+		} else {
+			debug.SendEventsToLog("app",
+				fmt.Sprintf("Write to fluent-bit failed, going to retry, err: %v", err),
+				debug.DEBUG, 0)
 		}
 	}
 
@@ -578,7 +610,6 @@ func (f *Fluent) write(ctx context.Context, msg *msgToSend) (bool, error) {
 	closer := func() {
 		f.muconn.Lock()
 		defer f.muconn.Unlock()
-
 		f.close()
 	}
 
@@ -616,7 +647,14 @@ func (f *Fluent) write(ctx context.Context, msg *msgToSend) (bool, error) {
 		return err
 	}(); err != nil {
 		closer()
+		debug.SendEventsToLog("app",
+			fmt.Sprint("Closing connection due to write failure, will retry"),
+			debug.DEBUG, 0)
 		return true, fmt.Errorf("fluent#write: %v", err)
+	} else {
+		debug.SendEventsToLog("app",
+			fmt.Sprint("Write to fluent-bit successful"),
+			debug.DEBUG, 0)
 	}
 
 	// Acknowledgment check
