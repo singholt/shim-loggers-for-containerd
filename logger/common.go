@@ -510,6 +510,12 @@ func (l *Logger) sendLogMsgToDest(
 	if isPartialMsg {
 		message.PLogMetaData = &types.PartialLogMetaData{ID: partialID, Ordinal: partialOrdinal, Last: isLastPartial}
 	}
+
+	// Log message sent from shim-logger -> fluentd
+	debug.SendEventsToLog(l.Info.ContainerID,
+		fmt.Sprintf("[Pipe %s] Sending message to fluentd: %+v", source, message),
+		debug.DEBUG, 0)
+
 	err := l.Log(message)
 	if err != nil {
 		return fmt.Errorf("failed to log msg for container %s: %w", l.Info.ContainerName, err)

@@ -1,13 +1,16 @@
 package docker_logger_fluentd
 
 import (
+	"fmt"
 	"math"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/aws/shim-loggers-for-containerd/debug"
 	fluent "github.com/aws/shim-loggers-for-containerd/logger/fluentd/fluent_logger_golang"
+
 	"github.com/docker/docker/daemon/logger"
 	"github.com/docker/docker/daemon/logger/loggerutils"
 	"github.com/docker/docker/errdefs"
@@ -120,6 +123,12 @@ func (f *fluentd) Log(msg *logger.Message) error {
 
 	ts := msg.Timestamp
 	logger.PutMessage(msg)
+
+	// Log message sent from fluentd -> fluent-logger-golang
+	debug.SendEventsToLog(f.containerID,
+		fmt.Sprintf("Sending message to fluent-logger-golang: %+v", data),
+		debug.DEBUG, 0)
+
 	// fluent-logger-golang buffers logs from failures and disconnections,
 	// and these are transferred again automatically.
 	return f.writer.PostWithTime(f.tag, ts, data)

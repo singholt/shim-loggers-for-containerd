@@ -1,8 +1,11 @@
 package fluent_logger_golang
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,9 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"bytes"
-	"encoding/base64"
-	"encoding/binary"
+	"github.com/aws/shim-loggers-for-containerd/debug"
 
 	"github.com/tinylib/msgp/msgp"
 )
@@ -554,6 +555,12 @@ func e(x, y float64) int {
 
 func (f *Fluent) writeWithRetry(ctx context.Context, msg *msgToSend) error {
 	for i := 0; i < f.Config.MaxRetry; i++ {
+		// Log message sent from fluent-logger-golang -> fluent-bit.
+		// We don't pass the container ID to the fluent-logger-golang,
+		// hence setting "app" as the syslog identifier for now.
+		debug.SendEventsToLog("app",
+			fmt.Sprintf("Sending message to fluent-bit: %+v", msg),
+			debug.DEBUG, 0)
 		if retry, err := f.write(ctx, msg); !retry {
 			return err
 		}
