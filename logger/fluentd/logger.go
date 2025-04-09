@@ -11,9 +11,8 @@ import (
 
 	"github.com/aws/shim-loggers-for-containerd/debug"
 	"github.com/aws/shim-loggers-for-containerd/logger"
-
+	dockerfluentd "github.com/aws/shim-loggers-for-containerd/logger/fluentd/docker_logger_fluentd"
 	"github.com/containerd/containerd/runtime/v2/logging"
-	dockerfluentd "github.com/docker/docker/daemon/logger/fluentd"
 )
 
 const (
