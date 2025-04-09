@@ -559,7 +559,7 @@ func (f *Fluent) writeWithRetry(ctx context.Context, msg *msgToSend) error {
 		// We don't pass the container ID to the fluent-logger-golang,
 		// hence setting "app" as the syslog identifier for now.
 		debug.SendEventsToLog("app",
-			fmt.Sprintf("Sending message to fluent-bit: %+v", msg),
+			fmt.Sprintf("Sending message to fluent-bit of length %d", len(msg.data)+len(msg.ack)),
 			debug.DEBUG, 0)
 		if retry, err := f.write(ctx, msg); !retry {
 			return err

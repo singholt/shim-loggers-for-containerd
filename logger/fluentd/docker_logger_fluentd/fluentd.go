@@ -126,7 +126,7 @@ func (f *fluentd) Log(msg *logger.Message) error {
 
 	// Log message sent from fluentd -> fluent-logger-golang
 	debug.SendEventsToLog(f.containerID,
-		fmt.Sprintf("Sending message to fluent-logger-golang: %+v", data),
+		fmt.Sprintf("Sending message to fluent-logger-golang of length %d", len(data["log"])),
 		debug.DEBUG, 0)
 
 	// fluent-logger-golang buffers logs from failures and disconnections,

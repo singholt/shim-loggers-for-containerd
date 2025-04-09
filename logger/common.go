@@ -513,7 +513,7 @@ func (l *Logger) sendLogMsgToDest(
 
 	// Log message sent from shim-logger -> fluentd
 	debug.SendEventsToLog(l.Info.ContainerID,
-		fmt.Sprintf("[Pipe %s] Sending message to fluentd: %+v", source, message),
+		fmt.Sprintf("[Pipe %s] Sending message to fluentd of length %d", source, len(message.Line)),
 		debug.DEBUG, 0)
 
 	err := l.Log(message)
