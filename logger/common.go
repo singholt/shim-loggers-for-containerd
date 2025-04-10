@@ -479,6 +479,12 @@ func readFromContainerPipe(pipe io.Reader, buf []byte, bytesInBuffer, maxReadByt
 			// Pipe is closed, set flag to true.
 			eof = true
 		}
+
+		// Log how many bytes shim-logger read from the container pipe
+		debug.SendEventsToLog("app",
+			fmt.Sprintf("Shim logger read %d bytes from container pipe", readBytesFromPipe),
+			debug.DEBUG, 0)
+
 		atomic.AddUint64(&bytesReadFromSrc, uint64(readBytesFromPipe))
 		bytesInBuffer += readBytesFromPipe
 	}
